@@ -22,6 +22,20 @@ further.t.test <- t.test(x=further.data, mu = mu0, alternative = "less")
 (potential.error <- error.num/error.denom)
 
 # part b
-for (i in seq(-5,5,length.out=1000)){
-  
+t.errors <- rep(NA, length.out = 1000)
+# NOTE: I don't like the way I'm doing this for loop ...
+j <- 1
+for (i in seq(-10,10,length.out=1000)){
+  num <- skewness(further.data) * (2*i^2 + 1) * dnorm(i)
+  denom <- 6 * sqrt(n)
+  t.errors[j] <- num/denom
+  j <- j + 1
 }
+ggplot()+
+  geom_line(aes(x=seq(-10,10,length.out=1000), y = t.errors))
+
+# part c
+alpha0.1 <- error.formula
+(min.nsize <- (error.num/(6 * alpha0.1))^2)
+
+
