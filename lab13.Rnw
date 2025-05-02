@@ -18,6 +18,7 @@
 library(tidyverse)
 library(e1071)
 library(xtable)
+library(boot)
 @
 
 \begin{enumerate}
@@ -56,7 +57,7 @@ error.denom <- 6 * sqrt(n)
 (potential.error <- error.num/error.denom)
 
 @
-  \textbf{Solution:}The potential error in the computation of the $p$-value is \Sexpr{potential.error} when testing $H_0: \mu_X=0; H_a: \mu_X<0$ using the zebra finch further data. 
+  \textbf{Solution:} The potential error in the computation of the $p$-value is \Sexpr{potential.error} when testing $H_0: \mu_X=0; H_a: \mu_X<0$ using the zebra finch further data. 
   \item Compute the error for $t$ statistics from -10 to 10 and plot a line
   that shows the error across $t$. Continue to use the skewness and 
   the sample size for the zebra finch further data. \\
@@ -245,7 +246,7 @@ Bootstrapping & -1.60 & -1.58 & -1.59 \\
 \caption{5$^{th}$ percentile of the shifted resamples of the t statistic for further, closer, and difference data, compared to the t-test.}
 \label{table2}
 \end{table}
-\textbf{Solution:} The 5$^{th}$ percentile for the t-test is the same for all three sets of data, as they are all drawn from the T distribution. The shifted resamples for the t statistic from bootstrapping was calculated for further, closer, and difference data, and the values are compared in Table \ref{table2}. Overall, bootstrapping seems to overestimate the 5$^{th}$ percentiles (larger than the ones drawn from the T distribution) for all data.
+\textbf{Solution:} The 5$^{th}$ percentile for the t-test is the same for all three sets of data, as they are all drawn from the T distribution. The shifted resamples for the t statistic from bootstrapping was calculated for further, closer, and difference data, and the values are compared in Table \ref{table2}. Interestingly, all of the bootstrap values are larger than the T-test ones.
   \item Compute the bootstrap confidence intervals using the resamples. How do these 
   compare to the $t$-test confidence intervals? \\
   <<warning = F, message = F>>=
@@ -285,12 +286,10 @@ R <- 1000
 further.helper <- boot(data = further.data,
                        statistic = boot.mean,
                        R = R)
-
 # closer
 closer.helper <- boot(data = closer.data,
                       statistic = boot.mean,
                       R = R)
-
 # diff
 diff.helper <- boot(data = diff.data,
                     statistic = boot.mean,
@@ -305,18 +304,19 @@ diff.helper <- boot(data = diff.data,
 # closer
 (boot.closer.CI <- quantile(closer.xbars, c(0.025, 0.975)))
 (t.closer.CI <- t.test(x=closer.data, mu=mu0, alternative = "two.sided")$conf.int)
+(closer.bca <- boot.ci(closer.helper, type="bca"))
 
 # diff
 (boot.diff.CI <- quantile(diff.xbars, c(0.025, 0.975)))
 (t.diff.CI <- t.test(x=diff.data, mu=mu0, alternative = "two.sided")$conf.int)
 (diff.bca <- boot.ci(diff.helper, type="bca"))
 @ 
-\textbf{Solution:} The $95\%$ confidence intervals for the further data are ($-0.254, -0.160$) using bootstrap percentile interval, and ($-0.257, -0.149$) for the t-test.\\
-The $95\%$ confidence intervals for the closer data are ($0.124, 0.193$) using bootstrap percentile interval, and ($0.117, 0.195$) for the t-test. \\
-The $95\%$ confidence intervals for the difference data are ($0.286, 0.447$) using bootstrap percentile interval, and ($0.272, 0.446$) for the t-test. \\
-Because the CIs were calculated on the data directly, we needed to conduct resampling again for each of the data's sample means instead of t-statistic. 
-
-Write out the solutions for this tomorrow and also go over the captions (they kind of suck ass). Note that BCa did not seem to work well here, so did not include in write-up.
+\textbf{Solution:} The $95\%$ confidence intervals for the further data are ($-0.254, -0.160$) using bootstrap percentile confidence interval, ($-0.260$, $-0.158$) using the bootstrap BCa, and ($-0.257, -0.149$) for the t-test.\\
+The $95\%$ confidence intervals for the closer data are ($0.124, 0.193$) using bootstrap percentile confidence interval, ($0.122$, $0.192$) using the bootstrap BCa, and ($0.117, 0.195$) for the t-test. \\
+The $95\%$ confidence intervals for the difference data are ($0.286, 0.447$) using bootstrap percentile confidence interval, ($0.286$, $0.451$) using the bootstrap BCa, and ($0.272, 0.446$) for the t-test. \\
+Because the CIs were calculated on the data directly, we needed to conduct resampling again for each of the data's sample means instead of t-statistic. \\
+The BCa confidence intervals and the percentile confidence intervals were vert similar to each other, suggesting there is not much bias or skewness in the data. \\
+Additionally, since $n=25$, we can assume that at least some sort of normality and symmetry emerges when conducting resampling, as its close to the boundary for CLT ($n=30$).
 \end{enumerate}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -366,7 +366,7 @@ for(i in 1:R){
 
 # no need to shift back either!
 @
-\textbf{Solution:} The normal procedure for the randomization test is conducted in the code above. However, because our $H_0$ is specified as $\mu = 0$, we do not need to shift the data before and after shuffling because its already centered around $0$. 
+\textbf{Solution:} The procedure for the randomization test is conducted in the code above. However, because our $H_0$ is specified as $\mu = 0$, we do not need to shift the data before and after shuffling because its already centered around $0$. 
   \item Compute the randomization test $p$-value for each test. \\
   <<message = F, warning =F>>=
 # task b
@@ -603,9 +603,9 @@ repeat{
 
 c(mu.lower.diff, mu.upper.diff)
 @
-  \textbf{Solution:} The $95\%$ randomization confidence intervals for the further data is ($-0.253$, $-0.153$), compared to the t-test ($-0.257$,$-0.149$) and the bootstrap ($-0.254, -0.160$).\\
-  The $95\%$ randomization confidence intervals for the closer data is ($0.116$, $0.196$), compared to the t-test ($0.117, 0.195$) and the bootstrap ($0.124, 0.193$).\\
-  The $95\%$ randomization confidence intervals for the difference data is ($0.269$, $0.449$), compared to the t-test ($0.272, 0.446$) and the bootstrap ($0.286, 0.447$). \\
+  \textbf{Solution:} The $95\%$ randomization confidence intervals for the further data is ($-0.253$, $-0.153$), compared to the t-test ($-0.257$,$-0.149$), the bootstrap BCa ($-0.260$, $-0.158$), and the bootstrap percentile ($-0.254, -0.160$).\\
+  The $95\%$ randomization confidence intervals for the closer data is ($0.116$, $0.196$), compared to the t-test ($0.117, 0.195$, the bootstrap BCa ($0.122$, $0.192$), and the bootstrap percentile ($0.124, 0.193$).\\
+  The $95\%$ randomization confidence intervals for the difference data is ($0.269$, $0.449$), compared to the t-test ($0.272, 0.446$), the bootstrap Bca ($0.286$, $0.451$), and the bootstrap percentile ($0.286, 0.447$). \\
   As we can see, the confidence intervals for all the data using randomization is similar to the confidence intervals from the t-test and bootstrapping, which should make sense. \texttt{xbars} needs to be shifted when calculating the confidence interval because \verb|mu.lower| and \verb|mu.upper| change as we loop through to check. The randomization confidence interval is a lot more ``brute force" compared to the others, and we have to search over a grid manually to find the them. While we have historically used \verb|R <- 10000| in randomization, I switched to \verb|R <- 1000| so the code runs quicker.  
 \end{enumerate}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

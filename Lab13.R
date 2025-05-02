@@ -210,12 +210,10 @@ R <- 1000
 further.helper <- boot(data = further.data,
                        statistic = boot.mean,
                        R = R)
-
 # closer
 closer.helper <- boot(data = closer.data,
                       statistic = boot.mean,
                       R = R)
-
 # diff
 diff.helper <- boot(data = diff.data,
                     statistic = boot.mean,
@@ -230,6 +228,7 @@ diff.helper <- boot(data = diff.data,
 # closer
 (boot.closer.CI <- quantile(closer.xbars, c(0.025, 0.975)))
 (t.closer.CI <- t.test(x=closer.data, mu=mu0, alternative = "two.sided")$conf.int)
+(closer.bca <- boot.ci(closer.helper, type="bca"))
 
 # diff
 (boot.diff.CI <- quantile(diff.xbars, c(0.025, 0.975)))
