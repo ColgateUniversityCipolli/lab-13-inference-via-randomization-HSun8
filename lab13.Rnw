@@ -315,7 +315,7 @@ diff.helper <- boot(data = diff.data,
 The $95\%$ confidence intervals for the closer data are ($0.124, 0.193$) using bootstrap percentile confidence interval, ($0.122$, $0.192$) using the bootstrap BCa, and ($0.117, 0.195$) for the t-test. \\
 The $95\%$ confidence intervals for the difference data are ($0.286, 0.447$) using bootstrap percentile confidence interval, ($0.286$, $0.451$) using the bootstrap BCa, and ($0.272, 0.446$) for the t-test. \\
 Because the CIs were calculated on the data directly, we needed to conduct resampling again for each of the data's sample means instead of t-statistic. \\
-The BCa confidence intervals and the percentile confidence intervals were vert similar to each other, suggesting there is not much bias or skewness in the data. \\
+The BCa confidence intervals and the percentile confidence intervals were very similar to each other, suggesting there is not much bias or skewness in the data. \\
 Additionally, since $n=25$, we can assume that at least some sort of normality and symmetry emerges when conducting resampling, as its close to the boundary for CLT ($n=30$).
 \end{enumerate}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
