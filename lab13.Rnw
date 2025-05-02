@@ -157,7 +157,7 @@ for (i in 1:R){
                             size= length(diff.data),
                             replace = T)
   resamples$resamps.diff[i] <- (mean(diff.resample - mu0))/
-                               (sd(further.data)/sqrt(n))
+                               (sd(diff.data)/sqrt(n))
 }
 
 # shifting data
@@ -196,7 +196,7 @@ xtable(all.pvals)
 @
 \begin{table}[ht]
 \centering
-\begin{tabular}{rlrrr}
+\begin{tabular}{rrrrr}
   \hline
  Type & p.further & p.closer & p.diff \\ 
   \hline
@@ -204,14 +204,96 @@ T-test & 0.00 & 0.00 & 0.00 \\
   Bootstrapping & 0.00 & 0.00 & 0.00 \\ 
    \hline
 \end{tabular}
-\caption{Table comparing $p$-values for further, closer, and differences in the zebra finch data using the T-test and Bootstrapping}
+\caption{$p$-values for further, closer, and differences in the zebra finch data using the T-test and Bootstrapping}
 \label{table1}
 \end{table}
  \textbf{Solution:} The $p$-values calculated using bootstrapping is so small that it is effectively $0$ and treated as such, for the further, closer, and difference zebra finch data. In order to calculate the two-sided $p$-value for the difference data, you need to find the $p$-value on both tails, which can be found by adding or subtracting the mean of the difference data by $\delta$. However, since $\mu_0 = 0$, we can just using the negative of the mean of the difference data to get the ``mirror" observation on the other tail. $p$-values are compared in Table \ref{table1}.    
     \item What is the 5$^{th}$ percentile of the shifted resamples under the null hypothesis? 
-  Note this value approximates $t_{0.05, n-1}$. Compare these values in each case.
+  Note this value approximates $t_{0.05, n-1}$. Compare these values in each case. \\
+  <<warning = F, message = F>>=
+# part c
+# 5th percentile for t test (same for all)
+t.5th <- qt(p=0.05, df=n-1)
+
+# 5th percentile for bootstrapping 
+# further
+boot.f5th <- quantile(resamples$resamps.further.null, 0.05)
+
+# closer
+boot.c5th <- quantile(resamples$resamps.closer.null, 0.05)
+
+# diff
+boot.d5th <- quantile(resamples$resamps.diff.null, 0.05)
+
+# create table
+all.5thp <- tibble(Type = c("T-test", "Bootstrapping"),
+                   further = c(t.5th, boot.f5th),
+                   closer = c(t.5th, boot.c5th),
+                   diff = c(t.5th, boot.d5th))
+xtable(all.5thp)
+@
+\begin{table}[ht]
+\centering
+\begin{tabular}{rlrrr}
+  \hline
+ Type & further & closer & diff \\ 
+  \hline
+T-test & -1.71 & -1.71 & -1.71 \\ 
+Bootstrapping & -1.60 & -1.58 & -1.59 \\ 
+   \hline
+\end{tabular}
+\caption{5$^{th}$ percentile of the shifted resamples of the t statistic for further, closer, and difference data, compared to the t-test.}
+\label{table2}
+\end{table}
+\textbf{Solution:} The 5$^{th}$ percentile for the t-test is the same for all three sets of data, as they are all drawn from the T distribution. The shifted resamples for the t statistic from bootstrapping was calculated for further, closer, and difference data, and the values are compared in Table \ref{table2}. Overall, bootstrapping seems to overestimate the 5$^{th}$ percentiles (larger than the ones drawn from the T distribution) for all data.
   \item Compute the bootstrap confidence intervals using the resamples. How do these 
-  compare to the $t$-test confidence intervals?
+  compare to the $t$-test confidence intervals? \\
+  <<warning = F, message = F>>=
+# part d
+# need to keep track of mean (xbar) now
+further.xbars <- rep(NA, R)
+closer.xbars <- rep(NA, R)
+diff.xbars <- rep(NA, R)
+
+for (i in 1:R){
+  # further
+  further.resample <- sample(x = further.data,
+                             size= length(further.data),
+                             replace = T)
+  further.xbars[i] <- mean(further.resample)
+  
+  # closer
+  closer.resample <- sample(x = closer.data,
+                            size= length(closer.data),
+                            replace = T)
+  closer.xbars[i] <- mean(closer.resample)
+  
+  # diff
+  diff.resample <- sample(x = diff.data,
+                          size= length(diff.data),
+                          replace = T)
+  diff.xbars[i] <- mean(diff.resample)
+}
+
+# CI
+# further
+(boot.further.CI <- quantile(further.xbars, c(0.025, 0.975)))
+(t.further.CI <- t.test(x=further.data, mu=mu0, alternative = "two.sided")$conf.int)
+
+# closer
+(boot.closer.CI <- quantile(closer.xbars, c(0.025, 0.975)))
+(t.closer.CI <- t.test(x=closer.data, mu=mu0, alternative = "two.sided")$conf.int)
+
+# diff
+(boot.diff.CI <- quantile(diff.xbars, c(0.025, 0.975)))
+(t.diff.CI <- t.test(x=diff.data, mu=mu0, alternative = "two.sided")$conf.int)
+@ 
+\textbf{Solution:} The $95\%$ confidence intervals for the further data are ($-0.254, -0.160$) using bootstrap percentile interval, and ($-0.257, -0.149$) for the t-test.\\
+The $95\%$ confidence intervals for the closer data are ($0.124, 0.193$) using bootstrap percentile interval, and ($0.117, 0.195$) for the t-test. \\
+The $95\%$ confidence intervals for the difference data are ($0.286, 0.447$) using bootstrap percentile interval, and ($0.272, 0.446$) for the t-test. \\
+Because the CIs were calculated on the data directly, we needed to conduct resampling again for each of the data's sample means instead of t-statistic. 
+
+Write out the solutions for this tomorrow and also go over the captions (they kind of suck ass). Note that BCa did not seem to work well here, so did not include in write-up.
 \end{enumerate}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -222,12 +304,286 @@ T-test & 0.00 & 0.00 & 0.00 \\
 randomization procedure.
 \begin{enumerate}
 \item Now, consider the zebra finch data. We do not know the generating distributions
-for the closer, further, and difference data, so perform the randomization procedure
-  \item Compute the randomization test $p$-value for each test.
+for the closer, further, and difference data, so perform the randomization procedure. \\
+<<message = F, warning = F>>=
+# part a
+set.seed(13345)
+R <- 1000
+rand <- tibble(xbars.further = rep(NA, R),
+               xbars.closer = rep(NA, R),
+               xbars.diff = rep(NA, R))
+# since mean 0 (mu0 = 0) under H0 is given, no need to shift
+
+# RANDOMIZE / SHUFFLE
+for(i in 1:R){
+  # further
+  further.rand <- further.data *
+    sample(x = c(-1, 1),
+           size = length(further.data),
+           replace = T)
+  
+  rand$xbars.further[i] <- mean(further.rand)
+  
+  # closer
+  closer.rand <- closer.data *
+    sample(x = c(-1, 1),
+           size = length(closer.data),
+           replace = T)
+  
+  rand$xbars.closer[i] <- mean(closer.rand)
+  
+  # diff
+  diff.rand <- diff.data *
+    sample(x = c(-1, 1),
+           size = length(diff.data),
+           replace = T)
+  
+  rand$xbars.diff[i] <- mean(diff.rand)
+}
+
+# no need to shift back either!
+@
+\textbf{Solution:} The normal procedure for the randomization test is conducted in the code above. However, because our $H_0$ is specified as $\mu = 0$, we do not need to shift the data before and after shuffling because its already centered around $0$. 
+  \item Compute the randomization test $p$-value for each test. \\
+  <<message = F, warning =F>>=
+# task b
+# p-value 
+(rand.pvals <- rand |>
+  summarize(p.further = mean(xbars.further <= mean(further.data)),
+            p.closer = mean(xbars.closer >= mean(closer.data)),
+            p.low.diff = mean(xbars.diff <= -mean(diff.data)),
+            p.high.diff = mean(xbars.diff >= mean(diff.data)),
+            pdiff = p.low.diff + p.high.diff))
+@
+\begin{table}[ht]
+\centering
+\begin{tabular}{rrrrr}
+  \hline
+ Type & p.further & p.closer & p.diff \\ 
+  \hline
+T-test & 0.00 & 0.00 & 0.00 \\ 
+  Bootstrapping & 0.00 & 0.00 & 0.00 \\
+  Randomization & 0.00 & 0.00 & 0.00 \\
+   \hline
+\end{tabular}
+\caption{$p$-values for further, closer, and differences in the zebra finch data using the T-test, Bootstrapping, and Randomization}
+\label{table3}
+\end{table}
+  \textbf{Solution:} Similar to the bootstrap $p$-values, the values are so small that it is effectively $0$ across all the data. The randomization $p$-value procedure is nearly identical to the bootstrap $p$-value, except we are now comparing shifted resampled means to the sample mean. $p$-values are compared in Table \ref{table3}.
+  
   \item Compute the randomization confidence interval by iterating over values of $\mu_0$.\\
   \textbf{Hint:} You can ``search" for the lower bound from $Q_1$ and subtracting by 0.0001, 
   and the upper bound using $Q_3$ and increasing by 0.0001. You will continue until you find 
-  the first value for which the two-sided $p$-value is greater than or equal to 0.05.
+  the first value for which the two-sided $p$-value is greater than or equal to 0.05. \\
+  <<message = F, warning = F>>=
+# task c
+# further 
+R <- 1000
+mu0.iterate.further <- 0.01
+starting.point.further <- mean(further.data)
+
+mu.lower.further <- starting.point.further
+repeat{
+  rand <- tibble(xbars = rep(NA, R))
+  
+  # PREPROCESSING: shift the data to be mean 0 under H0
+  x.shift <- further.data - mu.lower.further
+  # RANDOMIZE / SHUFFLE
+  for(i in 1:R){
+    curr.rand <- x.shift *
+      sample(x = c(-1, 1),
+             size = length(x.shift),
+             replace = T)
+    
+    rand$xbars[i] <- mean(curr.rand)
+  }
+  # Thinking is hard
+  rand <- rand |>
+    mutate(xbars = xbars + mu.lower.further) # shifting back
+  
+  # p-value 
+  p.val <-mean(rand$xbars >= mean(further.data))
+  
+  if(p.val < 0.05){
+    break
+  }else{
+    mu.lower.further <- mu.lower.further - mu0.iterate.further
+  }
+}
+
+mu.upper.further <- starting.point.further
+repeat{
+  rand <- tibble(xbars = rep(NA, R))
+  
+  # PREPROCESSING: shift the data to be mean 0 under H0
+  x.shift <- further.data - mu.upper.further
+  # RANDOMIZE / SHUFFLE
+  for(i in 1:R){
+    curr.rand <- x.shift *
+      sample(x = c(-1, 1),
+             size = length(x.shift),
+             replace = T)
+    
+    rand$xbars[i] <- mean(curr.rand)
+  }
+  # Thinking is hard
+  rand <- rand |>
+    mutate(xbars = xbars + mu.upper.further) # shifting back
+  
+  # p-value 
+  p.val <-mean(rand$xbars <= mean(further.data))
+  
+  if(p.val < 0.05){
+    break
+  }else{
+    mu.upper.further <- mu.upper.further + mu0.iterate.further
+  }
+}
+
+c(mu.lower.further, mu.upper.further)
+
+# closer
+R <- 1000
+mu0.iterate.closer <- 0.01
+starting.point.closer <- mean(closer.data)
+
+mu.lower.closer <- starting.point.closer
+repeat{
+  rand <- tibble(xbars = rep(NA, R))
+  
+  # PREPROCESSING: shift the data to be mean 0 under H0
+  x.shift <- closer.data - mu.lower.closer
+  # RANDOMIZE / SHUFFLE
+  for(i in 1:R){
+    curr.rand <- x.shift *
+      sample(x = c(-1, 1),
+             size = length(x.shift),
+             replace = T)
+    
+    rand$xbars[i] <- mean(curr.rand)
+  }
+  # Thinking is hard
+  rand <- rand |>
+    mutate(xbars = xbars + mu.lower.closer) # shifting back
+  
+  # p-value 
+  p.val <-mean(rand$xbars >= mean(closer.data))
+  
+  if(p.val < 0.05){
+    break
+  }else{
+    mu.lower.closer <- mu.lower.closer - mu0.iterate.closer
+  }
+}
+
+mu.upper.closer <- starting.point.closer
+repeat{
+  rand <- tibble(xbars = rep(NA, R))
+  
+  # PREPROCESSING: shift the data to be mean 0 under H0
+  x.shift <- closer.data - mu.upper.closer
+  # RANDOMIZE / SHUFFLE
+  for(i in 1:R){
+    curr.rand <- x.shift *
+      sample(x = c(-1, 1),
+             size = length(x.shift),
+             replace = T)
+    
+    rand$xbars[i] <- mean(curr.rand)
+  }
+  # Thinking is hard
+  rand <- rand |>
+    mutate(xbars = xbars + mu.upper.closer) # shifting back
+  
+  # p-value 
+  p.val <-mean(rand$xbars <= mean(closer.data))
+  
+  if(p.val < 0.05){
+    break
+  }else{
+    mu.upper.closer <- mu.upper.closer + mu0.iterate.closer
+  }
+}
+
+c(mu.lower.closer, mu.upper.closer)
+
+# diff
+R <- 1000
+mu0.iterate.diff <- 0.01
+starting.point.diff <- mean(diff.data)
+
+mu.lower.diff <- starting.point.diff
+repeat{
+  rand <- tibble(xbars = rep(NA, R))
+  
+  # PREPROCESSING: shift the data to be mean 0 under H0
+  x.shift <- diff.data - mu.lower.diff
+  # RANDOMIZE / SHUFFLE
+  for(i in 1:R){
+    curr.rand <- x.shift *
+      sample(x = c(-1, 1),
+             size = length(x.shift),
+             replace = T)
+    
+    rand$xbars[i] <- mean(curr.rand)
+  }
+  # Thinking is hard
+  rand <- rand |>
+    mutate(xbars = xbars + mu.lower.diff) # shifting back
+  
+  # p-value 
+  delta <- abs(mean(diff.data) - mu.lower.diff)
+  low <- mu.lower.diff - delta # mirror
+  high <- mu.lower.diff + delta   # xbar
+  p.val <- mean(rand$xbars <= low) +
+      mean(rand$xbars >= high)
+  
+  if(p.val < 0.05){
+    break
+  }else{
+    mu.lower.diff <- mu.lower.diff - mu0.iterate.diff
+  }
+}
+
+mu.upper.diff <- starting.point.diff
+repeat{
+  rand <- tibble(xbars = rep(NA, R))
+  
+  # PREPROCESSING: shift the data to be mean 0 under H0
+  x.shift <- diff.data - mu.upper.diff
+  # RANDOMIZE / SHUFFLE
+  for(i in 1:R){
+    curr.rand <- x.shift *
+      sample(x = c(-1, 1),
+             size = length(x.shift),
+             replace = T)
+    
+    rand$xbars[i] <- mean(curr.rand)
+  }
+  # Thinking is hard
+  rand <- rand |>
+    mutate(xbars = xbars + mu.upper.diff) # shifting back
+  
+  # p-value 
+  delta <- abs(mean(diff.data) - mu.upper.diff)
+  low <- mu.upper.diff - delta # mirror
+  high <- mu.upper.diff + delta   # xbar
+  p.val <- mean(rand$xbars <= low) +
+    mean(rand$xbars >= high)
+  
+  if(p.val < 0.05){
+    break
+  }else{
+    mu.upper.diff <- mu.upper.diff + mu0.iterate.diff
+  }
+}
+
+c(mu.lower.diff, mu.upper.diff)
+@
+  \textbf{Solution:} The $95\%$ randomization confidence intervals for the further data is ($-0.253$, $-0.153$), compared to the t-test ($-0.257$,$-0.149$) and the bootstrap ($-0.254, -0.160$).\\
+  The $95\%$ randomization confidence intervals for the closer data is ($0.116$, $0.196$), compared to the t-test ($0.117, 0.195$) and the bootstrap ($0.124, 0.193$).\\
+  The $95\%$ randomization confidence intervals for the difference data is ($0.269$, $0.449$), compared to the t-test ($0.272, 0.446$) and the bootstrap ($0.286, 0.447$). \\
+  As we can see, the confidence intervals for all the data using randomization is similar to the confidence intervals from the t-test and bootstrapping, which should make sense. \texttt{xbars} needs to be shifted when calculating the confidence interval because \verb|mu.lower| and \verb|mu.upper| change as we loop through to check. The randomization confidence interval is a lot more ``brute force" compared to the others, and we have to search over a grid manually to find the them. While we have historically used \verb|R <- 10000| in randomization, I switched to \verb|R <- 1000| so the code runs quicker.  
 \end{enumerate}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
