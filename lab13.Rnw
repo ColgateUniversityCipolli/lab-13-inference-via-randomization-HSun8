@@ -16,6 +16,7 @@
 \begin{document}
 <<echo=F, message=F, warning=F>>=
 library(tidyverse)
+library(e1071)
 @
 
 \begin{enumerate}
@@ -36,19 +37,73 @@ for the the further observations.
   \end{align*}
   where $f_Z(\cdot)$ and $F_Z(\cdot)$ are the Gaussian PDF and CDF and skew is the
   skewness of the data. What is the potential error in the computation of the 
-  $p$-value when testing $H_0: \mu_X=0; H_a: \mu_X<0$ using the zebra finch further data? 
+  $p$-value when testing $H_0: \mu_X=0; H_a: \mu_X<0$ using the zebra finch further data? \\
+  <<message = F, warning = F>>=
+# part a
+zebrafinch.data <- read_csv("zebrafinches.csv")
+mu0 <- 0
+further.data <- zebrafinch.data$further
+n <- length(further.data)
 
+# t.test and t.stat
+further.t.test <- t.test(x=further.data, mu = mu0, alternative = "less")
+(t.further <- further.t.test$statistic[[1]])
+
+# potential error calculation
+error.num <- skewness(further.data) * (2*t.further^2 + 1) * dnorm(t.further)
+error.denom <- 6 * sqrt(n)
+(potential.error <- error.num/error.denom)
+
+@
+  \textbf{Solution:}The potential error in the computation of the $p$-value is \Sexpr{potential.error} when testing $H_0: \mu_X=0; H_a: \mu_X<0$ using the zebra finch further data. 
   \item Compute the error for $t$ statistics from -10 to 10 and plot a line
   that shows the error across $t$. Continue to use the skewness and 
-  the sample size for the zebra finch further data.
+  the sample size for the zebra finch further data. \\
+  <<warning = F, message = F>>=
+# part b
+gg.errors <- rep(NA, length.out = 1000)
+gg.tvals <- seq(-10,10,length.out=1000)
 
+# create data for errors (futher data)
+for (i in 1:length(gg.tvals)){
+  num <- skewness(further.data) * (2*gg.tvals[i]^2 + 1) * dnorm(gg.tvals[i])
+  denom <- 6 * sqrt(n)
+  gg.errors[i] <- num/denom
+}
+
+# plot
+errors.plot <- ggplot()+
+  geom_line(aes(x= gg.tvals, y = gg.errors))+
+  theme_bw()+
+  ylab("Potential Error")+
+  xlab("t")+
+  ggtitle("Potential Error for t, from -10 to 10")+
+  geom_vline(aes(xintercept = t.further), color = "red")
+@
+\begin{figure}[H]
+\centering
+\includegraphics[width=10cm, height=8.5cm]{errorplot.png}
+\caption{Potential error for t statistic ranging from -10 to 10, using the skewness of the zebra finch further data. The vertical line shows the t statistic for the zebra finch further data}
+\label{plot1}
+\end{figure}
+
+  \textbf{Solution:} Figure \ref{plot1} plots the error for the t statistic, ranging from -10 to 10. The t statistic for the further data is \Sexpr{t.further}, indicating an exceedingly small error (nearly $0$).
+  
   \item Suppose we wanted to have a tail probability within 10\% of the desired
   $\alpha=0.05$. Recall we did a left-tailed test using the further data.
   How large of a sample size would we need? That is, we need
   to solve the error formula equal to 10\% of the desired left-tail probability:
   \[0.10 \alpha  \stackrel{set}{=} \underbrace{\frac{\text{skew}}{\sqrt{n}} \frac{(2t^2+1)}{6} f_Z(t)}_{\textrm{error}},\]
   which yields
-  \[ n = \left(\frac{\text{skew}}{6(0.10\alpha)} (2t^2 + 1) f_Z(t)\right)^2.\]
+  \[ n = \left(\frac{\text{skew}}{6(0.10\alpha)} (2t^2 + 1) f_Z(t)\right)^2.\]\\
+  <<message = F, warning = F>>=
+alpha <- 0.05
+t.alpha <- qnorm(alpha)
+
+(min.nsize <- ((skewness(further.data) * (2*t.alpha^2 + 1) * dnorm(t.alpha))/
+                 (6 * 0.1* alpha))^2)
+@
+\textbf{Solution:} The smallest sample size we would need to have a tail probability within 10\% of the desired $\alpha=0.05$ is \Sexpr{ceiling(min.nsize)}. The experiment's $n = 25$ is significantly smaller than this. 
 \end{enumerate}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

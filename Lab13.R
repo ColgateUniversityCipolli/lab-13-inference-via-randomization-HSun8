@@ -6,36 +6,82 @@ library(e1071)
 # Task 1
 # part a
 (zebrafinch.data <- read_csv("zebrafinches.csv"))
+mu0 <- 0
 further.data <- zebrafinch.data$further
 (n <- length(further.data))
-mu0 <- 0
-# hedge's g + CI
-# hedges_g(x = x.further, mu = mu0, alternative = "less")
-# interpret_hedges_g(-1.51)
 
-# t.test
+# t.test and t.stat
 further.t.test <- t.test(x=further.data, mu = mu0, alternative = "less")
-(t.stat <- further.t.test$statistic[[1]])
+(t.further <- further.t.test$statistic[[1]])
 
-(error.num <- skewness(further.data) * (2*t.stat^2 + 1) * dnorm(t.stat))
+# potential error calculation
+(error.num <- skewness(further.data) * (2*t.further^2 + 1) * dnorm(t.further))
 (error.denom <- 6 * sqrt(n))
 (potential.error <- error.num/error.denom)
 
 # part b
-t.errors <- rep(NA, length.out = 1000)
-# NOTE: I don't like the way I'm doing this for loop ...
-j <- 1
-for (i in seq(-10,10,length.out=1000)){
-  num <- skewness(further.data) * (2*i^2 + 1) * dnorm(i)
+gg.errors <- rep(NA, length.out = 1000)
+gg.tvals <- seq(-10,10,length.out=1000)
+
+# create data for errors
+for (i in 1:length(gg.tvals)){
+  num <- skewness(further.data) * (2*gg.tvals[i]^2 + 1) * dnorm(gg.tvals[i])
   denom <- 6 * sqrt(n)
-  t.errors[j] <- num/denom
-  j <- j + 1
+  gg.errors[i] <- num/denom
 }
-ggplot()+
-  geom_line(aes(x=seq(-10,10,length.out=1000), y = t.errors))
+
+# plot
+errors.plot <- ggplot()+
+  geom_line(aes(x= gg.tvals, y = gg.errors))+
+  theme_bw()+
+  ylab("Potential Error")+
+  xlab("T")+
+  ggtitle("Potential Error for T, from -10 to 10")+
+  geom_vline(aes(xintercept = t.further), color = "red")
 
 # part c
-alpha0.1 <- error.formula
-(min.nsize <- (error.num/(6 * alpha0.1))^2)
+alpha <- 0.05
+t.alpha <- qnorm(alpha)
+
+(min.nsize <- ((skewness(further.data) * (2*t.alpha^2 + 1) * dnorm(t.alpha))/
+                 (6 * 0.1* alpha))^2)
+
+# Task 2
+# part a
+R <- 1000
+resamples <- tibble(xbars =rep(NA, R))
+for (i in 1:R){
+  curr.resample <- sample(x = further.data,
+                          size= length(further.data),
+                          replace = T)
+  resamples$xbars[i] <- mean(curr.resample)
+}
+resamples <- resamples |>
+  mutate(t = (xbars-0)/(sd(further.data)/sqrt(n)))
+(mean(resamples$t))
 
 
+(delta <- mean(resamples$t) - 0)
+(delta <- abs(mean(resamples$t) - mu0))
+(delta <- -mean(resamples$t) + mu0)
+(delta <- -(mean(resamples$t) - mu0))
+
+#low <- 
+resamples <- resamples |>
+  mutate(t.shifted = t - delta)
+
+ggplot(resamples)+
+  geom_histogram(aes(x=t, y= after_stat(density)))+
+  geom_density(aes(x=t))+
+  geom_histogram(aes(x=t.shifted, y = after_stat(density)))+
+  geom_density(aes(x=t.shifted))
+
+# part b
+further.t.test <- t.test(x=further.data, mu = mu0, alternative = "less")
+(t.stat <- further.t.test$statistic[[1]])
+low <- t.stat
+
+resamples |>
+  summarize(mean = mean(t.shifted),
+            p.low = mean(t.shifted <= low))
+            
