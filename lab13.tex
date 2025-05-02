@@ -269,7 +269,7 @@ sampling distribution of the $T$ statistic:
 \end{alltt}
 \begin{verbatim}
 ## % latex table generated in R 4.4.2 by xtable 1.8-4 package
-## % Fri May  2 13:43:40 2025
+## % Fri May  2 14:03:19 2025
 ## \begin{table}[ht]
 ## \centering
 ## \begin{tabular}{rlrrr}
@@ -326,7 +326,7 @@ T-test & 0.00 & 0.00 & 0.00 \\
 \end{alltt}
 \begin{verbatim}
 ## % latex table generated in R 4.4.2 by xtable 1.8-4 package
-## % Fri May  2 13:43:40 2025
+## % Fri May  2 14:03:19 2025
 ## \begin{table}[ht]
 ## \centering
 ## \begin{tabular}{rlrrr}
@@ -386,6 +386,36 @@ Bootstrapping & -1.60 & -1.58 & -1.59 \\
 \hldef{diff.xbars[i]} \hlkwb{<-} \hlkwd{mean}\hldef{(diff.resample)}
 \hldef{\}}
 
+\hlcom{# bca test}
+\hlcom{# helper function}
+\hldef{boot.mean} \hlkwb{<-} \hlkwa{function}\hldef{(}\hlkwc{d}\hldef{,} \hlkwc{i}\hldef{)\{}
+\hlkwd{mean}\hldef{(d[i])}
+\hldef{\}}
+\hldef{R} \hlkwb{<-} \hlnum{1000}
+\hlcom{# further}
+\hldef{further.helper} \hlkwb{<-} \hlkwd{boot}\hldef{(}\hlkwc{data} \hldef{= further.data,}
+                     \hlkwc{statistic} \hldef{= boot.mean,}
+                     \hlkwc{R} \hldef{= R)}
+\end{alltt}
+
+
+{\ttfamily\noindent\bfseries\color{errorcolor}{\#\# Error in boot(data = further.data, statistic = boot.mean, R = R): could not find function "{}boot"{}}}\begin{alltt}
+\hlcom{# closer}
+\hldef{closer.helper} \hlkwb{<-} \hlkwd{boot}\hldef{(}\hlkwc{data} \hldef{= closer.data,}
+                    \hlkwc{statistic} \hldef{= boot.mean,}
+                    \hlkwc{R} \hldef{= R)}
+\end{alltt}
+
+
+{\ttfamily\noindent\bfseries\color{errorcolor}{\#\# Error in boot(data = closer.data, statistic = boot.mean, R = R): could not find function "{}boot"{}}}\begin{alltt}
+\hlcom{# diff}
+\hldef{diff.helper} \hlkwb{<-} \hlkwd{boot}\hldef{(}\hlkwc{data} \hldef{= diff.data,}
+                  \hlkwc{statistic} \hldef{= boot.mean,}
+                  \hlkwc{R} \hldef{= R)}
+\end{alltt}
+
+
+{\ttfamily\noindent\bfseries\color{errorcolor}{\#\# Error in boot(data = diff.data, statistic = boot.mean, R = R): could not find function "{}boot"{}}}\begin{alltt}
 \hlcom{# CI}
 \hlcom{# further}
 \hldef{(boot.further.CI} \hlkwb{<-} \hlkwd{quantile}\hldef{(further.xbars,} \hlkwd{c}\hldef{(}\hlnum{0.025}\hldef{,} \hlnum{0.975}\hldef{)))}
@@ -403,6 +433,11 @@ Bootstrapping & -1.60 & -1.58 & -1.59 \\
 ## [1] 0.95
 \end{verbatim}
 \begin{alltt}
+\hldef{(further.bca} \hlkwb{<-} \hlkwd{boot.ci}\hldef{(further.helper,} \hlkwc{type}\hldef{=}\hlsng{"bca"}\hldef{))}
+\end{alltt}
+
+
+{\ttfamily\noindent\bfseries\color{errorcolor}{\#\# Error in boot.ci(further.helper, type = "{}bca"{}): could not find function "{}boot.ci"{}}}\begin{alltt}
 \hlcom{# closer}
 \hldef{(boot.closer.CI} \hlkwb{<-} \hlkwd{quantile}\hldef{(closer.xbars,} \hlkwd{c}\hldef{(}\hlnum{0.025}\hldef{,} \hlnum{0.975}\hldef{)))}
 \end{alltt}
@@ -434,7 +469,12 @@ Bootstrapping & -1.60 & -1.58 & -1.59 \\
 ## attr(,"conf.level")
 ## [1] 0.95
 \end{verbatim}
-\end{kframe}
+\begin{alltt}
+\hldef{(diff.bca} \hlkwb{<-} \hlkwd{boot.ci}\hldef{(diff.helper,} \hlkwc{type}\hldef{=}\hlsng{"bca"}\hldef{))}
+\end{alltt}
+
+
+{\ttfamily\noindent\bfseries\color{errorcolor}{\#\# Error in boot.ci(diff.helper, type = "{}bca"{}): could not find function "{}boot.ci"{}}}\end{kframe}
 \end{knitrout}
 \textbf{Solution:} The $95\%$ confidence intervals for the further data are ($-0.254, -0.160$) using bootstrap percentile interval, and ($-0.257, -0.149$) for the t-test.\\
 The $95\%$ confidence intervals for the closer data are ($0.124, 0.193$) using bootstrap percentile interval, and ($0.117, 0.195$) for the t-test. \\

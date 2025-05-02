@@ -200,10 +200,32 @@ for (i in 1:R){
   diff.xbars[i] <- mean(diff.resample)
 }
 
+# bca test
+# helper function
+boot.mean <- function(d, i){
+  mean(d[i])
+}
+R <- 1000
+# further
+further.helper <- boot(data = further.data,
+                       statistic = boot.mean,
+                       R = R)
+
+# closer
+closer.helper <- boot(data = closer.data,
+                      statistic = boot.mean,
+                      R = R)
+
+# diff
+diff.helper <- boot(data = diff.data,
+                    statistic = boot.mean,
+                    R = R)
+
 # CI
 # further
 (boot.further.CI <- quantile(further.xbars, c(0.025, 0.975)))
 (t.further.CI <- t.test(x=further.data, mu=mu0, alternative = "two.sided")$conf.int)
+(further.bca <- boot.ci(further.helper, type="bca"))
 
 # closer
 (boot.closer.CI <- quantile(closer.xbars, c(0.025, 0.975)))
@@ -212,6 +234,8 @@ for (i in 1:R){
 # diff
 (boot.diff.CI <- quantile(diff.xbars, c(0.025, 0.975)))
 (t.diff.CI <- t.test(x=diff.data, mu=mu0, alternative = "two.sided")$conf.int)
+(diff.bca <- boot.ci(diff.helper, type="bca"))
+
 
 ################################################################################
 # task 3
