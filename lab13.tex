@@ -171,7 +171,7 @@ for the the further observations.
 \end{verbatim}
 \end{kframe}
 \end{knitrout}
-\textbf{Solution:} The smallest sample size we would need to have a tail probability within 10\% of the desired $\alpha=0.05$ is 521. The experiments $n = 25$ is significantly smaller than this. 
+\textbf{Solution:} The smallest sample size we would need to have a tail probability within 10\% of the desired $\alpha=0.05$ is 521. The experiment's $n = 25$ is significantly smaller than this. 
 \end{enumerate}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -190,9 +190,114 @@ sampling distribution of the $T$ statistic:
   object called \texttt{resamples.null.closer}, for example, and store the 
   resamples shifted to ensure they are consistent with the null hypotheses at the average 
   (i.e., here ensure the shifted resamples are 0 on average, corresponding
-  to $t=0$, for each case). 
-  \item Compute the bootstrap $p$-value for each test using the shifted resamples. 
-  How do these compare to the $t$-test $p$-values?
+  to $t=0$, for each case). \\
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
+\begin{alltt}
+\hlcom{# part a}
+\hldef{R} \hlkwb{<-} \hlnum{1000}
+\hlcom{# data}
+\hldef{further.data} \hlkwb{<-} \hldef{zebrafinch.data}\hlopt{$}\hldef{further}
+\hldef{closer.data} \hlkwb{<-} \hldef{zebrafinch.data}\hlopt{$}\hldef{closer}
+\hldef{diff.data} \hlkwb{<-} \hldef{zebrafinch.data}\hlopt{$}\hldef{diff}
+\hlcom{# set.seed() to make results reproducible}
+\hlkwd{set.seed}\hldef{(}\hlnum{13345}\hldef{)}
+\hlcom{# resampling}
+\hldef{resamples} \hlkwb{<-} \hlkwd{tibble}\hldef{(}\hlkwc{resamps.further} \hldef{=}\hlkwd{rep}\hldef{(}\hlnum{NA}\hldef{, R),}
+                  \hlkwc{resamps.closer} \hldef{=}\hlkwd{rep}\hldef{(}\hlnum{NA}\hldef{, R),}
+                  \hlkwc{resamps.diff} \hldef{=}\hlkwd{rep}\hldef{(}\hlnum{NA}\hldef{, R))}
+\hlkwa{for} \hldef{(i} \hlkwa{in} \hlnum{1}\hlopt{:}\hldef{R)\{}
+\hlcom{# further}
+\hldef{further.resample} \hlkwb{<-} \hlkwd{sample}\hldef{(}\hlkwc{x} \hldef{= further.data,}
+                        \hlkwc{size}\hldef{=} \hlkwd{length}\hldef{(further.data),}
+                        \hlkwc{replace} \hldef{= T)}
+\hldef{resamples}\hlopt{$}\hldef{resamps.further[i]} \hlkwb{<-} \hldef{(}\hlkwd{mean}\hldef{(further.resample} \hlopt{-} \hldef{mu0))}\hlopt{/}
+                                \hldef{(}\hlkwd{sd}\hldef{(further.data)}\hlopt{/}\hlkwd{sqrt}\hldef{(n))}
+
+\hlcom{# closer}
+\hldef{closer.resample} \hlkwb{<-} \hlkwd{sample}\hldef{(}\hlkwc{x} \hldef{= closer.data,}
+                           \hlkwc{size}\hldef{=} \hlkwd{length}\hldef{(closer.data),}
+                           \hlkwc{replace} \hldef{= T)}
+\hldef{resamples}\hlopt{$}\hldef{resamps.closer[i]} \hlkwb{<-} \hldef{(}\hlkwd{mean}\hldef{(closer.resample} \hlopt{-} \hldef{mu0))}\hlopt{/}
+                                \hldef{(}\hlkwd{sd}\hldef{(closer.data)}\hlopt{/}\hlkwd{sqrt}\hldef{(n))}
+
+\hlcom{# diff}
+\hldef{diff.resample} \hlkwb{<-} \hlkwd{sample}\hldef{(}\hlkwc{x} \hldef{= diff.data,}
+                          \hlkwc{size}\hldef{=} \hlkwd{length}\hldef{(diff.data),}
+                          \hlkwc{replace} \hldef{= T)}
+\hldef{resamples}\hlopt{$}\hldef{resamps.diff[i]} \hlkwb{<-} \hldef{(}\hlkwd{mean}\hldef{(diff.resample} \hlopt{-} \hldef{mu0))}\hlopt{/}
+                             \hldef{(}\hlkwd{sd}\hldef{(further.data)}\hlopt{/}\hlkwd{sqrt}\hldef{(n))}
+\hldef{\}}
+
+\hlcom{# shifting data}
+\hldef{resamples} \hlkwb{<-} \hldef{resamples |>}
+ \hlkwd{mutate}\hldef{(}\hlkwc{resamps.further.null} \hldef{= resamps.further} \hlopt{-} \hlkwd{mean}\hldef{(resamps.further),}
+      \hlkwc{resamps.closer.null} \hldef{= resamps.closer} \hlopt{-} \hlkwd{mean}\hldef{(resamps.closer),}
+      \hlkwc{resamps.diff.null} \hldef{= resamps.diff} \hlopt{-} \hlkwd{mean}\hldef{(resamps.diff))}
+\end{alltt}
+\end{kframe}
+\end{knitrout}
+\textbf{Solution:} Above is the code using to conducting resampling for the t statistic for the zebra finch data. Since we did resampling on the t statistic, which we want to be centered at 0, we shift the resamples by simply subtracting the mean of all the resamples to center. \verb|set.seed()| was used to create reproducible results. 
+  
+  \item Compute the bootstrap $p$-value for each test using the shifted resamples. How do these compare to the $t$-test $p$-values? \\
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
+\begin{alltt}
+\hlcom{# part b }
+\hldef{boot.pvals} \hlkwb{<-} \hldef{resamples |>}
+\hlkwd{summarize}\hldef{(}\hlkwc{p.further} \hldef{=} \hlkwd{mean}\hldef{(resamps.further.null} \hlopt{<=} \hlkwd{mean}\hldef{(resamps.further)),}
+          \hlkwc{p.closer} \hldef{=} \hlkwd{mean}\hldef{(resamps.closer.null} \hlopt{>=} \hlkwd{mean}\hldef{(resamps.closer)),}
+          \hlkwc{p.low.diff} \hldef{=} \hlkwd{mean}\hldef{(resamps.diff.null} \hlopt{<= -}\hlkwd{mean}\hldef{(resamps.diff)),}
+          \hlkwc{p.high.diff} \hldef{=} \hlkwd{mean}\hldef{(resamps.diff.null} \hlopt{>=} \hlkwd{mean}\hldef{(resamps.diff)),}
+          \hlkwc{pdiff} \hldef{= p.low.diff} \hlopt{+} \hldef{p.high.diff)}
+
+\hlcom{# p vals from t test}
+\hlcom{# further}
+\hldef{t.pval.further} \hlkwb{<-} \hlkwd{t.test}\hldef{(}\hlkwc{x}\hldef{=further.data,} \hlkwc{mu} \hldef{= mu0,} \hlkwc{alternative} \hldef{=} \hlsng{"less"}\hldef{)}\hlopt{$}\hldef{p.value}
+\hlcom{# closer }
+\hldef{t.pval.closer} \hlkwb{<-} \hlkwd{t.test}\hldef{(}\hlkwc{x}\hldef{=closer.data,} \hlkwc{mu} \hldef{= mu0,} \hlkwc{alternative} \hldef{=} \hlsng{"greater"}\hldef{)}\hlopt{$}\hldef{p.value}
+\hlcom{# diff}
+\hldef{t.pval.further} \hlkwb{<-} \hlkwd{t.test}\hldef{(}\hlkwc{x}\hldef{=diff.data,} \hlkwc{mu} \hldef{= mu0,} \hlkwc{alternative} \hldef{=} \hlsng{"two.sided"}\hldef{)}\hlopt{$}\hldef{p.value}
+
+\hlcom{# creating table}
+\hldef{all.pvals} \hlkwb{<-} \hlkwd{tibble}\hldef{(}\hlkwc{test} \hldef{=} \hlkwd{c}\hldef{(}\hlsng{"T-test"}\hldef{,} \hlsng{"Bootstrapping"}\hldef{),}
+                  \hlkwc{p.further} \hldef{=} \hlkwd{c}\hldef{(t.pval.further,boot.pvals}\hlopt{$}\hldef{p.further),}
+                  \hlkwc{p.closer} \hldef{=} \hlkwd{c}\hldef{(t.pval.closer, boot.pvals}\hlopt{$}\hldef{p.closer),}
+                  \hlkwc{p.diff} \hldef{=} \hlkwd{c}\hldef{(t.pval.closer, boot.pvals}\hlopt{$}\hldef{pdiff))}
+
+\hlkwd{xtable}\hldef{(all.pvals)}
+\end{alltt}
+\begin{verbatim}
+## % latex table generated in R 4.4.2 by xtable 1.8-4 package
+## % Fri May  2 02:11:53 2025
+## \begin{table}[ht]
+## \centering
+## \begin{tabular}{rlrrr}
+##   \hline
+##  & test & p.further & p.closer & p.diff \\ 
+##   \hline
+## 1 & T-test & 0.00 & 0.00 & 0.00 \\ 
+##   2 & Bootstrapping & 0.00 & 0.00 & 0.00 \\ 
+##    \hline
+## \end{tabular}
+## \end{table}
+\end{verbatim}
+\end{kframe}
+\end{knitrout}
+\begin{table}[ht]
+\centering
+\begin{tabular}{rlrrr}
+  \hline
+ Type & p.further & p.closer & p.diff \\ 
+  \hline
+T-test & 0.00 & 0.00 & 0.00 \\ 
+  Bootstrapping & 0.00 & 0.00 & 0.00 \\ 
+   \hline
+\end{tabular}
+\caption{Table comparing $p$-values for further, closer, and differences in the zebra finch data using the T-test and Bootstrapping}
+\label{table1}
+\end{table}
+ \textbf{Solution:} The $p$-values calculated using bootstrapping is so small that it is effectively $0$ and treated as such, for the further, closer, and difference zebra finch data. In order to calculate the two-sided $p$-value for the difference data, you need to find the $p$-value on both tails, which can be found by adding or subtracting the mean of the difference data by $\delta$. However, since $\mu_0 = 0$, we can just using the negative of the mean of the difference data to get the ``mirror" observation on the other tail. $p$-values are compared in Table \ref{table1}.    
     \item What is the 5$^{th}$ percentile of the shifted resamples under the null hypothesis? 
   Note this value approximates $t_{0.05, n-1}$. Compare these values in each case.
   \item Compute the bootstrap confidence intervals using the resamples. How do these 

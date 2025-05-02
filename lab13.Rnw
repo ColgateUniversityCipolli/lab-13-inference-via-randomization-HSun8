@@ -17,6 +17,7 @@
 <<echo=F, message=F, warning=F>>=
 library(tidyverse)
 library(e1071)
+library(xtable)
 @
 
 \begin{enumerate}
@@ -122,9 +123,91 @@ sampling distribution of the $T$ statistic:
   object called \texttt{resamples.null.closer}, for example, and store the 
   resamples shifted to ensure they are consistent with the null hypotheses at the average 
   (i.e., here ensure the shifted resamples are 0 on average, corresponding
-  to $t=0$, for each case). 
-  \item Compute the bootstrap $p$-value for each test using the shifted resamples. 
-  How do these compare to the $t$-test $p$-values?
+  to $t=0$, for each case). \\
+  <<warning = F, message = F>>=
+# part a
+R <- 1000
+# data
+further.data <- zebrafinch.data$further
+closer.data <- zebrafinch.data$closer
+diff.data <- zebrafinch.data$diff
+# set.seed() to make results reproducible
+set.seed(13345)
+# resampling
+resamples <- tibble(resamps.further =rep(NA, R),
+                    resamps.closer =rep(NA, R),
+                    resamps.diff =rep(NA, R))
+for (i in 1:R){
+  # further
+  further.resample <- sample(x = further.data,
+                          size= length(further.data),
+                          replace = T)
+  resamples$resamps.further[i] <- (mean(further.resample - mu0))/
+                                  (sd(further.data)/sqrt(n))
+  
+  # closer
+  closer.resample <- sample(x = closer.data,
+                             size= length(closer.data),
+                             replace = T)
+  resamples$resamps.closer[i] <- (mean(closer.resample - mu0))/
+                                  (sd(closer.data)/sqrt(n))
+  
+  # diff
+  diff.resample <- sample(x = diff.data,
+                            size= length(diff.data),
+                            replace = T)
+  resamples$resamps.diff[i] <- (mean(diff.resample - mu0))/
+                               (sd(further.data)/sqrt(n))
+}
+
+# shifting data
+resamples <- resamples |>
+ mutate(resamps.further.null = resamps.further - mean(resamps.further),
+        resamps.closer.null = resamps.closer - mean(resamps.closer),
+        resamps.diff.null = resamps.diff - mean(resamps.diff))
+@
+\textbf{Solution:} Above is the code using to conducting resampling for the t statistic for the zebra finch data. Since we did resampling on the t statistic, which we want to be centered at 0, we shift the resamples by simply subtracting the mean of all the resamples to center. \verb|set.seed()| was used to create reproducible results. 
+  
+  \item Compute the bootstrap $p$-value for each test using the shifted resamples. How do these compare to the $t$-test $p$-values? \\
+  <<message = F, warning = F>>=
+# part b 
+boot.pvals <- resamples |>
+  summarize(p.further = mean(resamps.further.null <= mean(resamps.further)),
+            p.closer = mean(resamps.closer.null >= mean(resamps.closer)),
+            p.low.diff = mean(resamps.diff.null <= -mean(resamps.diff)),
+            p.high.diff = mean(resamps.diff.null >= mean(resamps.diff)),
+            pdiff = p.low.diff + p.high.diff)
+
+# p vals from t test
+# further
+t.pval.further <- t.test(x=further.data, mu = mu0, alternative = "less")$p.value
+# closer 
+t.pval.closer <- t.test(x=closer.data, mu = mu0, alternative = "greater")$p.value
+# diff
+t.pval.further <- t.test(x=diff.data, mu = mu0, alternative = "two.sided")$p.value
+
+# creating table
+all.pvals <- tibble(test = c("T-test", "Bootstrapping"),
+                    p.further = c(t.pval.further,boot.pvals$p.further),
+                    p.closer = c(t.pval.closer, boot.pvals$p.closer),
+                    p.diff = c(t.pval.closer, boot.pvals$pdiff))
+
+xtable(all.pvals)
+@
+\begin{table}[ht]
+\centering
+\begin{tabular}{rlrrr}
+  \hline
+ Type & p.further & p.closer & p.diff \\ 
+  \hline
+T-test & 0.00 & 0.00 & 0.00 \\ 
+  Bootstrapping & 0.00 & 0.00 & 0.00 \\ 
+   \hline
+\end{tabular}
+\caption{Table comparing $p$-values for further, closer, and differences in the zebra finch data using the T-test and Bootstrapping}
+\label{table1}
+\end{table}
+ \textbf{Solution:} The $p$-values calculated using bootstrapping is so small that it is effectively $0$ and treated as such, for the further, closer, and difference zebra finch data. In order to calculate the two-sided $p$-value for the difference data, you need to find the $p$-value on both tails, which can be found by adding or subtracting the mean of the difference data by $\delta$. However, since $\mu_0 = 0$, we can just using the negative of the mean of the difference data to get the ``mirror" observation on the other tail. $p$-values are compared in Table \ref{table1}.    
     \item What is the 5$^{th}$ percentile of the shifted resamples under the null hypothesis? 
   Note this value approximates $t_{0.05, n-1}$. Compare these values in each case.
   \item Compute the bootstrap confidence intervals using the resamples. How do these 
